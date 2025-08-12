@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Compromisos - Directora</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo_ministerio.png') }}">
+    <meta name="description" content="Editar compromisos como Director.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --color-primary: #3498db;
+            --color-secondary: #2c3e50;
+            --color-background: #f4f4f4;
+            --color-text: #333;
+            --color-white: #fff;
+            --color-gray-light: #ecf0f1;
+            --color-gray-dark: #95a5a6;
+            --color-danger: #e74c3c;
+            --color-warning: #f39c12;
+            --color-success: #2ecc71;
+            --font-main: Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            line-height: 1.6;
+            color: var(--color-text);
+            background-color: var(--color-background);
+        }
+
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: var(--color-primary);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            background-color: var(--color-white);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: fit-content;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--color-gray-light);
+        }
+
+        th {
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .priority-alta { background-color: var(--color-danger); color: var(--color-white); }
+        .priority-media { background-color: var(--color-warning); color: var(--color-text); }
+        .priority-baja { background-color: var(--color-success); color: var(--color-white); }
+
+        .date-limit-soon { background-color: #fff3cd; }
+        .date-limit-overdue { background-color: #f8d7da; color: #721c24; }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--color-gray-dark);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .form-textarea {
+            resize: both; 
+            min-height: 100px;
+            min-width: 200px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        footer {
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: var(--color-white);
+            border-top: 1px solid var(--color-gray-light);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+            }
+
+            th, td {
+                padding: 0.5rem;
+            }
+        }
+
+        .required::after {
+            content: " *";
+            color: red;
+        }
+
+        .responsable-principal {
+            color: red !important;
+            font-weight: bold !important;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 300px;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+
+        .alert .close {
+            color: inherit;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <main class="main-content">
+            <h1 class="text-3xl font-bold">Editor de Compromisos - Jefaturas</h1>
+
+            <!-- Alert Section -->
+            {% if alert %}
+            <div class="alert alert-{{ alert['type'] }}">
+                <span>{{ alert['message'] }}</span>
+                <button type="button" class="close" onclick="this.parentElement.style.display='none';">&times;</button>
+            </div>
+            {% endif %}
+
+            <form id="compromisos-form" method="POST" action="{{ url_for('director.ver_compromisos_director', month=request.args.get('month'), departamento_id=request.args.get('departamento_id'), year=request.args.get('year')) }}">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Descripción</th>
+                                <th class="required">Estado</th>
+                                <th>Prioridad</th>
+                                <th>Nivel de Avance (%)</th>
+                                <th>Fecha Límite</th>
+                                <th class="required">Referentes</th>
+                                <th>Comentario Referente</th>
+                                <th>Comentario Dirección</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for compromiso in compromisos %}
+                            <tr>
+                                <td>{{ compromiso.descripcion }}</td>
+                                <td>
+                                    <select name="estado-{{ compromiso.compromiso_id }}" class="form-select">
+                                        <option value="Pendiente" {% if compromiso.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                                        <option value="Completado" {% if compromiso.estado == 'Completado' %}selected{% endif %}>Completado</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full priority-{{ compromiso.prioridad | lower }}">
+                                        {{ compromiso.prioridad }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <input type="number" name="nivel_avance-{{ compromiso.compromiso_id }}" value="{{ compromiso.avance }}" min="0" max="100" class="form-input">
+                                </td>
+                                <td class="date-limit" data-fecha="{{ compromiso.fecha_limite.strftime('%Y-%m-%dT%H:%M') }}">
+                                    {{ compromiso.fecha_limite.strftime('%d-%m-%Y %H:%M') }}
+                                </td>
+                                <td>
+                                    <select name="referentes-{{ compromiso.compromiso_id }}" multiple class="select2 form-select">
+                                        {% for value, label in todos_referentes %}
+                                            {% if value in compromiso.responsable_principal_id %}
+                                                <option value="{{ value }}" class="responsable-principal" {% if value in compromiso.referentes_ids %}selected{% endif %}>[Principal] {{ label }}</option>
+                                            {% else %}
+                                                <option value="{{ value }}" {% if value in compromiso.referentes_ids %}selected{% endif %}>{{ label }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <textarea name="comentario-{{ compromiso.compromiso_id }}" class="form-textarea" readonly>{{ compromiso.comentario }}</textarea>
+                                </td>
+                                <td>
+                                    <textarea name="comentario_direccion-{{ compromiso.compromiso_id }}" class="form-textarea">{{ compromiso.comentario_direccion }}</textarea>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-6 text-center">
+                    <button type="submit" class="btn">
+                        <i class="fas fa-save mr-2"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+
+            <footer>
+                <div class="container mx-auto px-4 flex justify-between items-center flex-wrap">
+                    <a href="{{ url_for('director.resumen_compromisos') }}" class="btn mb-2 sm:mb-0">
+                        <i class="fas fa-home mr-2"></i> Volver al Resumen
+                    </a>
+                    <p class="text-gray-600 mb-2 sm:mb-0">Servicio de Salud del Maule</p>
+                    <img src="{{ url_for('static', filename='logo_ministerio.png') }}" alt="Logotipo del Servicio de Salud del Maule" class="h-16">
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                placeholder: "Selecciona referentes",
+                allowClear: false,
+                width: '100%',
+                templateResult: function(data) {
+                    var $result = $("<span></span>");
+                    $result.text(data.text);
+                    
+                    if ($(data.element).hasClass('responsable-principal')) {
+                        $result.addClass('responsable-principal');
+                    }
+                    
+                    return $result;
+                }
+            });
+
+            $('.date-limit').each(function() {                const fechaLimite = new Date($(this).data('fecha'));                const hoy = new Date();                const diferenciaDias = Math.floor((fechaLimite - hoy) / (1000 * 60 * 60 * 24));
+                if (diferenciaDias <= 0) {
+                    $(this).addClass('date-limit-overdue');
+                } else if (diferenciaDias <= 7) {
+                    $(this).addClass('date-limit-soon');
+                }
+            });
+        });
+    </script>
+    <script>
+        console.error("Error de prueba para verificar la consola.");
+    </script>
+</body>
+</html>
+

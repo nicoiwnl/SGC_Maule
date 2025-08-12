@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ver Compromisos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo_ministerio.png') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        .container {
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .footer img {
+            width: 100px;
+            height: auto;
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 300px;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+
+        .alert .close {
+            color: inherit;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+{% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="container">
+        <h1>Ver Compromisos</h1>
+
+        <!-- Alert Section -->
+        {% if alert %}
+        <div class="alert alert-{{ alert['type'] }}">
+            <span>{{ alert['message'] }}</span>
+            <button type="button" class="close" onclick="this.parentElement.style.display='none';">&times;</button>
+        </div>
+        {% endif %}
+        <script>
+            setTimeout(function(){
+                document.querySelectorAll('.alert').forEach(function(alert){
+                    alert.style.display = 'none';
+                });
+            }, 2000);
+        </script>
+
+        <!-- Botón para volver al home -->
+        <a href="{{ url_for('home.home_view') }}" class="btn-secondary"><i class="fas fa-home mr-2"></i> Volver al Home</a>
+
+        <form id="compromisos-form" method="POST" action="{{ url_for('director.ver_compromisos_director', mes=request.args.get('month'), departamento_id=request.args.get('departamento_id')) }}">
+    <!-- Campos ocultos para enviar el mes y el departamento -->
+    <input type="hidden" name="mes" value="{{ request.args.get('month') }}">
+    <input type="hidden" name="departamento_id" value="{{ request.args.get('departamento_id') }}">
+
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Estado</th>
+                <th>Nivel de Avance (%)</th>
+                <th>Fecha Límite</th>
+                <th>Departamento</th>
+                <th>Referentes</th>
+                <th>Comentario</th>
+                <th>Comentario Dirección</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for compromiso in compromisos %}
+            <tr>
+                <td>{{ compromiso.descripcion }}</td>
+                <td>
+                    <select name="estado-{{ compromiso.compromiso_id }}">
+                        <option value="Pendiente" {% if compromiso.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                        <option value="Completado" {% if compromiso.estado == 'Completado' %}selected{% endif %}>Completado</option>
+                    </select>
+                </td>
+                <td><input type="number" name="nivel_avance-{{ compromiso.compromiso_id }}" value="{{ compromiso.avance }}" min="0" max="100"></td>
+                <td>{{ compromiso.fecha_limite.strftime('%d-%m-%Y %H:%M') }}</td>
+                <td>
+                    {{ compromiso.departamento}}
+                </td>
+                <td>
+                    <select name="referentes-{{ compromiso.compromiso_id }}" multiple>
+                        {% for value, label in referentes %}
+                            <option value="{{ value }}" {% if value in compromiso.referentes_ids %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><textarea name="comentario-{{ compromiso.compromiso_id }}">{{ compromiso.comentario }}</textarea></td>
+                <td><textarea name="comentario_direccion-{{ compromiso.compromiso_id }}">{{ compromiso.comentario_director }}</textarea></td>
+                <td><button type="button" class="btn-primary guardar-btn" data-id="{{ compromiso.compromiso_id }}"><i class="fas fa-save"></i> Guardar</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+    </div>
+    <footer class="footer">
+        Servicio de Salud del Maule
+        <div>
+            <img src="{{ url_for('static', filename='logo_ministerio.png') }}" alt="Logo Servicio de Salud del Maule">
+        </div>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Inicializar Select2 para los selects de referentes
+            $('select[name^="referentes-"]').select2({
+                placeholder: "Selecciona referentes",
+                allowClear: true,
+                width: '300px'
+            });
+
+            // Capturar el evento de clic en el botón de guardar
+            $('.guardar-btn').click(function() {
+                var compromiso_id = $(this).data('id');  // Obtener el id del compromiso
+                var formData = $('#compromisos-form').serialize(); // Obtener los datos del formulario
+
+                // Enviar la solicitud de actualización a través de AJAX
+                $.ajax({
+                    url: "{{ url_for('home.ver_compromisos') }}",
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        alert('Cambios guardados con éxito');
+                        location.reload(); // Recargar la página para ver los cambios
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Error al guardar los cambios');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

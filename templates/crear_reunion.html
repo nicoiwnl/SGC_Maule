@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"="width=device-width, initial-scale=1.0">
+    <title>Crear Reunión y Agregar Compromisos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo_ministerio.png') }}">    <meta name="description" content="Formulario para crear reuniones y compromisos.">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+    
+        .btn-primary {
+            background-color: #1e40af;
+            color: #ffffff;
+            transition: background-color 0.2s ease-in-out;
+            margin-left: 20px;
+        }
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+        }
+
+        .btn-pdf {
+            background-color: #007bff;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: background-color 0.2s ease-in-out;
+            margin-left: 20px;
+
+        }
+        .btn-pdf:hover {
+            background-color: #0056b3;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            height: fit-content;
+            width: fit-content;
+            background-color: #007bff;
+
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background-color: #fff;
+            color: #1f2937;
+            line-height: 1.25rem;
+        }
+
+        .form-control textarea{
+            resize: horizontal;
+
+        }
+        .select2-container--default .select2-selection--multiple {
+            display: flex;
+            flex-direction: row;
+            min-height: 3rem;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            background-color: #fff;
+        }
+
+        .btn-confirm {
+            background-color: #4CAF50;
+            /* Verde */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: max-content;
+        }
+
+        .btn-confirm:hover {
+            background-color: #45a049;
+            /* Verde más oscuro */
+        }
+
+        /* Agregar estilos para hacer la tabla responsiva */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+        }
+        @media (max-width: 768px) {
+            .table-responsive table {
+                width: 100%;
+                display: block;
+            }
+            .table-responsive thead, .table-responsive tbody, .table-responsive th, .table-responsive td, .table-responsive tr { 
+                display: block; 
+            }
+            .table-responsive tr { 
+                margin-bottom: 15px; 
+            }
+            .table-responsive td { 
+                text-align: right; 
+                padding-left: 50%; 
+                position: relative; 
+            }
+            .table-responsive td::before { 
+                content: attr(data-label); 
+                position: absolute; 
+                left: 0;
+                width: 50%; 
+                padding-left: 15px; 
+                font-weight: bold;
+                text-align: left; 
+            }
+        }
+        .compromiso-textarea {
+            resize: both;
+            text-align: left;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            min-width: 300px;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-warning {
+            color: #856404;
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+
+        .alert .close {
+            color: inherit;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        /* Estilos para el indicador de carga */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        .loading-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 8px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 8px solid #1e40af;
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+    
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="bg-blue-600 text-white p-4">
+            <h1 class="text-2xl font-bold">Acta de Reunión DSSM</h1>
+        </div>
+
+        <div class="p-6" id="acta-content">
+            <!-- Alert Section -->
+            {% if alert %}
+            <div class="alert alert-{{ alert['type'] }}">
+                <span>{{ alert['message'] }}</span>
+                <button type="button" class="close" onclick="this.parentElement.style.display='none';">&times;</button>
+            </div>
+            {% endif %}
+            <script>
+                setTimeout(function(){
+                    document.querySelectorAll('.alert').forEach(function(alert){
+                        alert.style.display = 'none';
+                    });
+                }, 2000);
+            </script>
+
+            <form method="POST" action="{{ url_for('reunion.crear_reunion_paso1') }}" enctype="multipart/form-data" id="form-reunion">
+                {{ form.hidden_tag() }}
+                <input type="hidden" id="reunion_id" name="reunion_id" value="{{ some_reunion_id_value }}">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="nombre_reunion" class="block text-sm font-medium text-gray-700">Nombre de la
+                            Reunión</label>
+                        <input type="text" id="nombre_reunion" name="nombre_reunion" class="form-control"
+                            placeholder="Introduce el nombre de la reunión" required
+                            value="{{ form_data.get('nombre_reunion', '') }}">
+                    </div>
+
+                    <div>
+                        <label for="lugar" class="block text-sm font-medium text-gray-700">Lugar</label>
+                        <input type="text" id="lugar" name="lugar" class="form-control"
+                            placeholder="Introduce el lugar de la reunión" required
+                            value="{{ form_data.get('lugar', '') }}">
+                    </div>
+                    <div>
+                        <label for="tema" class="block text sm font-medium text-gray-700">Temas a Tratar</label>
+                        <textarea type="text" id="tema" name="tema" class="form-control"
+                            placeholder="Introduce los temas de la reunión" required rows="3">{{ form_data.get('tema', '') }}</textarea>
+                    </div>
+                    <div id="hora-group">
+                        <label for="fecha_reunion" class="block text-sm font-medium text-gray-700">Fecha y Hora de
+                            la Reunión</label>
+                        <input type="datetime-local" id="fecha_reunion" name="fecha_reunion" class="form-control"
+                            required value="{{ form_data.get('fecha_reunion', '') }}">
+                    </div>
+                    <div id="origen-group">
+                        <label for="origen" class="block text-sm font-medium text-gray-700">Origen</label>
+                        {{ form.origen(class="form-control select2", id="origen", **{'data-selected': form_data.get('origen', '')}) }}
+                    </div>
+                    <div id="area-group">
+                        <label for="area" class="block text-sm font-medium text-gray-700">Área</label>
+                        {{ form.area(class="form-control select2", id="area", **{'data-selected': form_data.get('area', '')}) }}
+                    </div>
+                    <div id="asistentes-group" class="col-span-2">
+                        <label for="asistentes-select" class="block text-sm font-medium text-gray-700">Asistentes</label>
+                        <select id="asistentes-select" name="asistentes[]" class="form-control select2 w-full" multiple
+                                data-selected="{{ form_data.get('asistentes', [])|tojson }}">
+                            {% for value, label, departamento, cargo in form.compromisos[0].referentes.choices %}
+                            <option value="{{ value }}" data-departamento="{{ departamento }}" data-cargo="{{ cargo }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <label for="invitados-select" class="block text-sm font-medium text-gray-700">Invitados</label>
+                        <select name="invitados[]" id="invitados-select" class="form-control select2 w-full" multiple>
+                            {% for value, label in form.invitados.choices %}
+                            {% set parts = label.split(' - ') %}
+                            <option value="{{ value }}" data-correo="{{ parts[2] }}" data-telefono="{{ parts[3] }}">
+                                {{ parts[0] }} - {{ parts[1] }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" id="btn-add-invitado" class="btn btn-secondary mt-2"><i class="fas fa-plus"></i> Añadir invitado</button>
+                        <div id="invitado-form" class="hidden mt-4">
+                            <label for="invitado-nombre" class="block text-sm font-medium text-gray-700">Nombre del Invitado</label>
+                            <input type="text" id="invitado-nombre" name="invitado-nombre" class="form-control" placeholder="Introduce el nombre del invitado">
+                            <label for="invitado-institucion" class="block text-sm font-medium text-gray-700 mt-2">Institución</label>
+                            <input type="text" id="invitado-institucion" name="invitado-institucion" class="form-control" placeholder="Introduce la institución del invitado">
+                            <label for="invitado-correo" class="block text-sm font-medium text-gray-700 mt-2">Correo</label>
+                            <input type="email" id="invitado-correo" name="invitado-correo" class="form-control" placeholder="Introduce el correo del invitado">
+                            <label for="invitado-telefono" class="block text-sm font-medium text-gray-700 mt-2">Teléfono</label>
+                            <input type="text" id="invitado-telefono" name="invitado-telefono" class="form-control" placeholder="Introduce el teléfono del invitado">
+                            <button type="button" id="btn-save-invitado" class="btn btn-primary mt-2"><i class="fas fa-save"></i> Guardar Invitado</button>
+                        </div>
+                    
+
+                    <!--
+                    <h3 class="text-lg font-medium text-gray-900">Participantes</h3>
+                    <table for="tabla-referentes" class="min-w-full divide-y divide-gray-200 mt-3">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asistente</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Departamento</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="correos-body" class="bg-white divide-y divide-gray-200">
+                        </tbody>
+                    </table>
+                        
+                    <br>
+                    <h3 class="text-lg font-medium text-gray-900 mt-6">Invitados</h3>
+                    <br>
+                    <div class="table-responsive">
+                        <table class="min-w-full divide-y divide-gray-200 mt-3">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Institución</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invitados-body" class="bg-white divide-y divide-gray-200">
+                            </tbody>
+                        </table>
+                        
+                    </div>
+                -->
+                <br>
+                <div class="mt-6">
+                    <h3 class="text-lg font-medium text-gray-900">Temas Analizados en Reunión</h3>
+                    <a style="font-size: small;">Caja de texto expansible</a>
+                    <textarea for = "temas_analizado" id="temas_analizado" name="temas_analizado" class="form-control mt-1"></textarea>
+                </div>
+                <div class="mt-6">
+                    <h3 class="text-lg font-medium text-gray-900">Proximas Fechas de Reuniones</h3>
+                    <a style="font-size: small;">Caja de texto expansible</a>
+                    <textarea for= "proximas_reuniones" id="proximas_reuniones" name="proximas_reuniones" class="form-control mt-1"></textarea>
+                </div>
+                <br>
+                <div class="mt-6">
+                    <h2 class="text-xl font-medium text-gray-900">Compromisos de la Reunión</h2>
+                    <table for= "tabla-compromisos" class="min-w-full divide-y divide-gray-200 mt-3" id="compromisos-table">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Nombre del Compromiso</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Prioridad</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Fecha Límite</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Departamento</th>
+                                <!-- We'll show these columns conditionally -->
+                                <th 
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Origen</th>
+                                <th 
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Area</th>
+                                <th
+                                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Referentes</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for compromiso_form in form.compromisos %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <textarea name="compromisos-{{ loop.index }}-nombre" class="form-control compromiso-textarea resize-vertical text-right" rows="2" required></textarea>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <select name="compromisos-{{ loop.index }}-prioridad" class="form-control" required>
+                                        <option value="Alta">Alta</option>
+                                        <option value="Media">Media</option>
+                                        <option value="Baja">Baja</option>
+                                    </select>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <input type="datetime-local" name="compromisos-{{ loop.index }}-fecha_limite"
+                                        class="form-control" required />
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <select name="compromisos-{{ loop.index }}-departamento" class="form-control departamento-select" required>
+                                        <option value="">Seleccione un departamento</option>
+                                        {% for value, label in form.compromisos[0].departamento.choices %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <!-- Corregir los select de origen y area -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <select name="compromisos-{{ loop.index }}-origen" class="form-control origen-select" required>
+                                        <option value="">Seleccione un departamento primero</option>
+                                    </select>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <select name="compromisos-{{ loop.index }}-area" class="form-control area-select" required>
+                                        <option value="">Seleccione un departamento primero</option>
+                                    </select>
+                                </td>
+                                <td class="referentes-select">
+                                    <select name="compromisos-{{ loop.index }}-referentes"
+                                        class="form-control select2" multiple="multiple" required>
+                                        {% for value, label, departamento, cargo in form.compromisos[0].referentes.choices %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <button type="button" class="btn btn-danger btn-remove"><i class="fas fa-trash"></i> Eliminar</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <a style="font-size: small; float: right;">El primer referente ingresado sera el principal responsable</a>
+                    <br>
+                    <button type="button" id="add-compromiso" class="btn btn-secondary mt-4"><i class="fas fa-plus"></i> Agregar otro
+                        compromiso</button>
+                    <button type="button" id="export-pdf" class="btn-pdf"><i class="fas fa-file-pdf"></i> Exportar Acta en PDF</button>
+                </div>
+                <br>
+                <div class="mt-6 flex justify-between items-center" style="display: center;">
+
+                    <a href="{{ url_for('home.home_view') }}" class="btn btn-secondary"><i class="fas fa-home"></i> Volver al inicio</a>
+
+                    <div>
+                        <label for="acta_pdf" class="block text-sm font-medium text-gray-700">Subir Acta y Documentos de la
+                            reunión</label>
+                            <input type="file" id="acta_pdf" name="acta_pdf" multiple 
+                            accept=".pdf, .png, .jpeg, .jpg, .doc, .docx, .zip, .ppt, .pptx, .xls, .xlsx, .pbix"
+                            class="form-control mt-1">
+                                              </div>
+                    <button type="submit" id="submit-btn" class="btn btn-primary btn-confirm"><i class="fas fa-check"></i> Confirmar Reunión y Compromisos</button>
+                </div>
+            </form>
+            <br>
+            <div class="container mx-auto px-4 flex justify-between items-center">
+                <p class="text-gray-600">Servicio de Salud del Maule</p>
+                <img src="{{ url_for('static', filename='logo_ministerio.png') }}"
+                    alt="Logotipo del Servicio de Salud del Maule" class="h-16">
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas/dist/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar si hay un error después de enviar el formulario y restablecer UI
+            const alertElement = document.querySelector('.alert');
+            if (alertElement && alertElement.classList.contains('alert-danger')) {
+                // Ocultar el overlay de carga
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) {
+                    loadingOverlay.classList.remove('active');
+                }
+                
+                // Restablecer el botón de envío
+                const submitBtn = document.getElementById('submit-btn');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-check"></i> Confirmar Reunión y Compromisos';
+                }
+                
+                // Asegurarse de que la alerta se muestra por más tiempo en caso de error
+                setTimeout(function() {
+                    document.querySelectorAll('.alert-danger').forEach(function(alert) {
+                        alert.style.display = 'none';
+                    });
+                }, 8000); // 8 segundos para errores
+                
+                // Seleccionar valores anteriores en los campos select2
+                if ($('select[name="origen"]').data('selected')) {
+                    $('select[name="origen"]').val($('select[name="origen"]').data('selected')).trigger('change');
+                }
+                
+                if ($('select[name="area"]').data('selected')) {
+                    $('select[name="area"]').val($('select[name="area"]').data('selected')).trigger('change');
+                }
+                
+                const asistentesSelected = $('#asistentes-select').data('selected');
+                if (asistentesSelected && asistentesSelected.length) {
+                    $('#asistentes-select').val(asistentesSelected).trigger('change');
+                }
+                
+                const invitadosSelected = $('#invitados-select').data('selected');
+                if (invitadosSelected && invitadosSelected.length) {
+                    $('#invitados-select').val(invitadosSelected).trigger('change');
+                }
+                
+                // Restaurar datos de compromisos si existen
+                {% if form_data and form_data.get('compromisos') %}
+                    // Eliminar filas existentes si hay datos de compromiso
+                    $('#compromisos-table tbody tr').slice(1).remove();
+                    
+                    {% for compromiso in form_data.get('compromisos') %}
+                        {% if loop.index > 1 %}
+                            // Añadir nueva fila para compromisos adicionales
+                            addCompromisoRow({{ loop.index }});
+                        {% endif %}
+                        
+                        // Establecer valores para los compromisos
+                        $('textarea[name="compromisos-{{ loop.index }}-nombre"]').val('{{ compromiso.get("nombre", "") }}');
+                        $('select[name="compromisos-{{ loop.index }}-prioridad"]').val('{{ compromiso.get("prioridad", "") }}');
+                        $('input[name="compromisos-{{ loop.index }}-fecha_limite"]').val('{{ compromiso.get("fecha_limite", "") }}');
+                        $('select[name="compromisos-{{ loop.index }}-departamento"]').val('{{ compromiso.get("departamento", "") }}');
+                        
+                        // Para los referentes
+                        const referentesSelected{{ loop.index }} = {{ compromiso.get("referentes", [])|tojson }};
+                        if (referentesSelected{{ loop.index }} && referentesSelected{{ loop.index }}.length) {
+                            $('select[name="compromisos-{{ loop.index }}-referentes"]').val(referentesSelected{{ loop.index }}).trigger('change');
+                        }
+                    {% endfor %}
+                    
+                    // Reinicializamos select2 para los compromisos restaurados
+                    $('.select2').select2({
+                        placeholder: "Selecciona referentes",
+                        allowClear: true,
+                        width: '100%'
+                    });
+                {% endif %}
+            }
+            
+            // Agregar validación para asegurar que hay al menos un compromiso
+            document.getElementById('form-reunion').addEventListener('submit', function(event) {
+                // Validación básica del formulario
+                const nombre_reunion = document.getElementById('nombre_reunion').value;
+                const lugar = document.getElementById('lugar').value;
+                const tema = document.getElementById('tema').value;
+                const fecha_reunion = document.getElementById('fecha_reunion').value;
+                
+                // Validar campos obligatorios
+                if (!nombre_reunion || !lugar || !tema || !fecha_reunion) {
+                    event.preventDefault(); // Detener el envío del formulario
+                    
+                    // Crear y mostrar un mensaje de error
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger';
+                    alertDiv.innerHTML = '<span>Por favor, complete todos los campos obligatorios.</span><button type="button" class="close" onclick="this.parentElement.style.display=\'none\';">&times;</button>';
+                    
+                    // Insertar el mensaje al principio del contenido del formulario
+                    const acta_content = document.getElementById('acta-content');
+                    acta_content.insertBefore(alertDiv, acta_content.firstChild);
+                    
+                    // Eliminar el mensaje después de unos segundos
+                    setTimeout(function() {
+                        alertDiv.style.display = 'none';
+                    }, 5000);
+                    
+                    return false;
+                }
+                
+                // Validar que haya al menos un compromiso
+                let tieneCompromisos = false;
+                const compromisosInputs = document.querySelectorAll('textarea[name$="-nombre"]');
+                for (let input of compromisosInputs) {
+                    if (input.value.trim()) {
+                        tieneCompromisos = true;
+                        break;
+                    }
+                }
+                
+                if (!tieneCompromisos) {
+                    event.preventDefault();
+                    
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger';
+                    alertDiv.innerHTML = '<span>Es necesario tener al menos un compromiso por reunión.</span><button type="button" class="close" onclick="this.parentElement.style.display=\'none\';">&times;</button>';
+                    
+                    const acta_content = document.getElementById('acta-content');
+                    acta_content.insertBefore(alertDiv, acta_content.firstChild);
+                    
+                    setTimeout(function() {
+                        alertDiv.style.display = 'none';
+                    }, 5000);
+                    
+                    return false;
+                }
+                
+                // Si todo está bien, mostrar el indicador de carga
+                document.getElementById('loading-overlay').classList.add('active');
+                
+                // Desactivar el botón de envío para evitar múltiples envíos
+                document.getElementById('submit-btn').disabled = true;
+                document.getElementById('submit-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+                
+                // El formulario continuará enviándose normalmente
+                return true;
+            });
+
+            // Inicializar select2 para campos generales y también para 'origen' y 'area'
+            $('.select2').select2({
+                placeholder: "Selecciona",
+                allowClear: true,
+                width: '100%'
+            });
+            // Inicialización específica para 'origen' y 'area' si se requiere un placeholder distinto
+            $('select[name="origen"]').select2({
+                placeholder: "Seleccione origen",
+                allowClear: true,
+                width: '100%'
+            });
+            $('select[name="area"]').select2({
+                placeholder: "Seleccione área",
+                allowClear: true,
+                width: '100%'
+            });
+            // Only initialize EasyMDE if the element exists
+            const descripcionEl = document.getElementById('descripcion');
+            if (descripcionEl) {
+                var easyMDE = new EasyMDE({ element: descripcionEl });
+            }
+            const descripcion1El = document.getElementById('descripcion1');
+            if (descripcion1El) {
+                var easyMDE1 = new EasyMDE({ element: descripcion1El });
+            }
+
+            document.getElementById('export-pdf').addEventListener('click', function() {
+                const form = document.getElementById('form-reunion');
+                const formData = new FormData(form);
+                const datosReunion = {};
+
+                // Recopilar campos de texto y textarea
+                datosReunion.nombre_reunion = formData.get('nombre_reunion');
+                datosReunion.lugar = formData.get('lugar');
+                datosReunion.tema = formData.get('tema');
+                datosReunion.fecha_reunion = formData.get('fecha_reunion');
+                datosReunion.temas_analizado = formData.get('temas_analizado');
+                datosReunion.descripcion1 = formData.get('descripcion1'); // Asegurarse de que el name es 'descripcion1'
+
+                // Recopilar 'origen'
+                if (formData.get('new_origen') && formData.get('new_origen').trim() !== "") {
+                    datosReunion.origen = formData.get('new_origen').trim();
+                } else {
+                    const origenSelect = document.querySelector('select[name="origen"]');
+                    if (origenSelect && origenSelect.selectedIndex >= 0) {
+                        const selectedOrigenOption = origenSelect.options[origenSelect.selectedIndex];
+                        datosReunion.origen = selectedOrigenOption.text;
+                    } else {
+                        datosReunion.origen = "No especificado";
+                    }
+                }
+
+                // Recopilar 'area'
+                if (formData.get('new_area') && formData.get('new_area').trim() !== "") {
+                    datosReunion.area = formData.get('new_area').trim();
+                } else {
+                    const areaSelect = document.querySelector('select[name="area"]');
+                    if (areaSelect && areaSelect.selectedIndex >= 0) {
+                        const selectedAreaOption = areaSelect.options[areaSelect.selectedIndex];
+                        datosReunion.area = selectedAreaOption.text;
+                    } else {
+                        datosReunion.area = "No especificado";
+                    }
+                }
+
+                // Recopilar 'asistentes-select'
+                const asistentesOptions = Array.from(document.querySelectorAll('select[name="asistentes[]"] option:checked'));
+                datosReunion.asistentes = asistentesOptions.map(option => ({
+                    id: option.value,
+                    nombre: option.text,
+                    departamento: option.getAttribute('data-departamento'),
+                    cargo: option.getAttribute('data-cargo')
+                }));
+
+                // Recopilar 'invitados-select'
+                const invitadosOptions = Array.from(document.querySelectorAll('select[name="invitados[]"] option:checked'));
+                datosReunion.invitados = invitadosOptions.map(option => ({
+                    id: option.value,
+                    nombre: option.text.split(' - ')[0],
+                    institucion: option.text.split(' - ')[1],
+                    correo: option.getAttribute('data-correo'),
+                    telefono: option.getAttribute('data-telefono')
+                }));
+
+                // Recopilar 'compromisos' de la tabla
+                const compromisos = [];
+                const compromisosRows = document.querySelectorAll('#compromisos-table tbody tr');
+                compromisosRows.forEach(row => {
+                    const nombre = row.querySelector('textarea[name$="-nombre"]').value;
+                    const prioridad = row.querySelector('select[name$="-prioridad"]').value;
+                    const fecha_limite = row.querySelector('input[name$="-fecha_limite"]').value;
+                    
+                    // Get the department, origen and area text from the selected options
+                    const departamentoSelect = row.querySelector('select[name$="-departamento"]');
+                    const departamento = departamentoSelect.selectedOptions[0].text;
+                    
+                    const origenSelect = row.querySelector('select[name$="-origen"]');
+                    const origen = origenSelect.selectedOptions[0].text;
+                    
+                    const areaSelect = row.querySelector('select[name$="-area"]');
+                    const area = areaSelect.selectedOptions[0].text;
+                    
+                    const referentesOptions = Array.from(row.querySelectorAll('select[name$="-referentes"] option:checked'));
+                    
+                    compromisos.push({
+                        nombre,
+                        prioridad,
+                        fecha_limite,
+                        departamento,
+                        origen,
+                        area,
+                        referentes: referentesOptions.map(option => ({
+                            nombre: option.text.split(' - ')[0],
+                            departamento: option.text.split(' - ')[1]
+                        }))
+                    });
+                });
+                datosReunion.compromisos = compromisos;
+
+                // Recopilar "Próximas Reuniones"
+                datosReunion.proximas_reuniones = formData.get('proximas_reuniones');
+
+                // Imprimir datos para depuración
+                console.log("Datos a guardar:", datosReunion);
+                console.log("Origen:", datosReunion.origen);
+                console.log("Área:", datosReunion.area);
+                
+                // Almacenar en localStorage
+                localStorage.setItem('datosReunion', JSON.stringify(datosReunion));
+                window.open("{{url_for('reunion.actas_reuniones')}}", "_blank");
+            });
+
+            // Inicializar select2
+            $('.select2').select2({
+                placeholder: "Selecciona",
+                allowClear: true,
+                width: '100%'
+            });
+
+            let compromisoIndex = $('#compromisos-table tbody tr').length + 1;
+
+            $('#btn-add-origen').on('click', function () {
+                const origenSelect = $('select[name="origen"]');
+                const newOrigenInput = $('#new-origen');
+
+                if (newOrigenInput.hasClass('hidden')) {
+                    newOrigenInput.removeClass('hidden');
+                    origenSelect.addClass('hidden');
+                    $(this).text('Usar origen existente');
+                } else {
+                    newOrigenInput.addClass('hidden');
+                    origenSelect.removeClass('hidden');
+                    $(this).text('Añadir nuevo Origen');
+                }
+            });
+
+            $('#btn-add-area').on('click', function () {
+                const areaSelect = $('select[name="area"]');
+                const newAreaInput = $('#new-area');
+
+                if (newAreaInput.hasClass('hidden')) {
+                    newAreaInput.removeClass('hidden');
+                    areaSelect.addClass('hidden');
+                    $(this).text('Usar área existente');
+                } else {
+                    newAreaInput.addClass('hidden');
+                    areaSelect.removeClass('hidden');
+                    $(this).text('Añadir nueva Área');
+                }
+            });
+
+            $('#add-compromiso').on('click', function () {
+                addCompromisoRow(compromisoIndex);
+                compromisoIndex++;
+                // Re-inicializar select2 para los nuevos selects
+                $('.select2').select2({
+                    placeholder: "Selecciona Referentes",
+                    allowClear: true,
+                    width: '100%'
+                });
+            });
+
+            $('#compromisos-table').on('click', '.btn-remove', function () {
+                $(this).closest('tr').remove();
+            });
+
+            $("#asistentes-select").select2({
+                placeholder: "Selecciona Referentes",
+                allowClear: true,
+                width: '100%'
+            });
+
+            const asistentesSelect = document.getElementById("asistentes-select");
+            const correosBody = document.getElementById("correos-body");
+
+            $(asistentesSelect).on("change", function () {
+                const seleccionados = $(this).val();
+                correosBody.innerHTML = "";
+
+                seleccionados.forEach(function (id) {
+                    const nombre = $(`#asistentes-select option[value="${id}"]`).text();
+                    const departamento = $(`#asistentes-select option[value="${id}"]`).data('departamento');
+                    const cargo = $(`#asistentes-select option[value="${id}"]`).data('cargo');
+                    const row = document.createElement("tr");
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">${nombre}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${departamento}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">${cargo}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <button type="button" class="btn btn-danger btn-remove" data-id="${id}">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </td>
+                    `;
+                    correosBody.appendChild(row);
+                });
+            });
+            //
+            //correosBody.addEventListener("click", function (e) {
+                //if (e.target && e.target.classList.contains("btn-remove")) {
+                    //const id = e.target.getAttribute("data-id");
+                  //  $(`#asistentes-select option[value="${id}"]`).prop("selected", false);
+                //    $(asistentesSelect).trigger("change");
+              //  }
+            //);
+     
+            // Debug added for agregar invitado button click
+            $('#btn-add-invitado').on('click', function () {
+                console.log('btn-add-invitado clicked');
+                $('#invitado-form').toggle(); // Cambiado: utiliza toggle() para mostrar/ocultar el formulario
+            });
+
+            $('#btn-save-invitado').on('click', function () {
+                const nombre = $('#invitado-nombre').val();
+                const institucion = $('#invitado-institucion').val();
+                const correo = $('#invitado-correo').val();
+                const telefono = $('#invitado-telefono').val();
+
+                if (nombre && institucion && correo && telefono) {
+                    $.ajax({
+                        url: "{{ url_for('reunion.add_invitado') }}",  // Corrected blueprint name
+                        method: "POST",
+                        data: {
+                            nombre: nombre,
+                            institucion: institucion,
+                            correo: correo,
+                            telefono: telefono
+                        },
+                        success: function(response) {
+                            const newOption = new Option(`${response.nombre} - ${response.institucion}`, response.id, true, true);
+                            $(newOption).attr('data-correo', response.correo).attr('data-telefono', response.telefono);
+                            $('#invitados-select').append(newOption).trigger('change');
+                            
+                            $('#invitado-form').addClass('hidden');
+                            $('#invitado-nombre').val('');
+                            $('#invitado-institucion').val('');
+                            $('#invitado-correo').val('');
+                            $('#invitado-telefono').val('');
+                        },
+                        error: function(error) {
+                            console.error('Error al guardar el invitado:', error);
+                            alert('Error al guardar el invitado. Por favor, inténtelo de nuevo.');
+                        }
+                    });
+                } else {
+                    alert('Por favor, complete todos los campos del invitado.');
+                }
+            });
+
+            // Envolver el manejo de eventos de invitados para evitar errores cuando la tabla esté comentada
+            const invitadosSelect = document.getElementById("invitados-select");
+            const invitadosBody = document.getElementById("invitados-body");
+            if (invitadosSelect && invitadosBody) {
+                invitadosSelect.addEventListener("change", function () {
+                    const seleccionados = Array.from(this.selectedOptions);
+                    invitadosBody.innerHTML = "";
+    
+                    seleccionados.forEach(function (option) {
+                        const nombre = option.text.split(' - ')[0];
+                        const institucion = option.text.split(' - ')[1];
+                        const correo = option.getAttribute('data-correo');
+                        const telefono = option.getAttribute('data-telefono');
+    
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td class="px-6 py-4 whitespace-nowrap">${nombre}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${institucion}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${correo}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">${telefono}</td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <button type="button" class="btn btn-danger btn-remove-invitado" data-id="${option.value}">
+                                    <i class="fas fa-trash"></i> Eliminar
+                                </button>
+                            </td>
+                        `;
+                        invitadosBody.appendChild(row);
+                    });
+                });
+    
+                invitadosBody.addEventListener("click", function (e) {
+                    if (e.target && e.target.closest(".btn-remove-invitado")) {
+                        const button = e.target.closest(".btn-remove-invitado");
+                        const id = button.getAttribute("data-id");
+                        // Desseleccionar la opción en el select
+                        const option = invitadosSelect.querySelector(`option[value="${id}"]`);
+                        if (option) {
+                            option.selected = false;
+                        }
+                        // Actualizar la tabla
+                        invitadosSelect.dispatchEvent(new Event('change'));
+                    }
+                });
+            }
+
+            function updateSelectedOrder(selectElement) {
+                const selectedOptions = Array.from(selectElement.selectedOptions);
+                const allOptions = Array.from(selectElement.options);
+
+                // Clear all options
+                selectElement.innerHTML = '';
+
+                // Append selected options first
+                selectedOptions.forEach(option => {
+                    selectElement.appendChild(option);
+                });
+
+                // Append the rest of the options
+                allOptions.forEach(option => {
+                    if (!selectedOptions.includes(option)) {
+                        selectElement.appendChild(option);
+                    }
+                });
+            }
+
+            $('#compromisos-table').on('change', 'select[name$="-referentes"]', function () {
+                updateSelectedOrder(this);
+            });
+
+            // Call the function initially to set the order on page load
+            const compromisoRows = document.querySelectorAll('#compromisos-table tbody tr');
+            compromisoRows.forEach(row => {
+                const referentesSelect = row.querySelector('select[name$="-referentes"]');
+                if (referentesSelect) {
+                    updateSelectedOrder(referentesSelect);
+                }
+            });
+
+        });
+
+        function addCompromisoRow(index) {
+            const newRow = `
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <textarea name="compromisos-${index}-nombre" class="form-control compromiso-textarea resize-vertical text-left" rows="2" required></textarea>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <select name="compromisos-${index}-prioridad" class="form-control" required>
+                            <option value="Alta">Alta</option>
+                            <option value="Media">Media</option>
+                            <option value="Baja">Baja</option>
+                        </select>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <input type="datetime-local" name="compromisos-${index}-fecha_limite" class="form-control" required>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <select name="compromisos-${index}-departamento" class="form-control departamento-select" required>
+                            <option value="">Seleccione departamento</option>
+                            <!-- Las opciones se cargarán dinámicamente -->
+                        </select>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <!-- Campo para origen específico del compromiso -->
+                        <select name="compromisos-${index}-origen" class="form-control">
+                            <option value="">Seleccione origen</option>
+                            <!-- Las opciones se cargarán cuando se seleccione un departamento -->
+                        </select>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <!-- Campo para área específico del compromiso -->
+                        <select name="compromisos-${index}-area" class="form-control">
+                            <option value="">Seleccione área</option>
+                            <!-- Las opciones se cargarán cuando se seleccione un departamento -->
+                        </select>
+                    </td>
+                    <td class="referentes-select">
+                        <select name="compromisos-${index}-referentes" class="form-control select2" multiple>
+                            <!-- Las opciones se cargarán dinámicamente -->
+                        </select>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <button type="button" class="btn btn-danger btn-remove"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+            $('#compromisos-table tbody').append(newRow);
+            
+            // Inicializar select2 para la nueva fila
+            $(`select[name="compromisos-${index}-referentes"]`).select2({
+                placeholder: "Selecciona referentes",
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Copiar las opciones de departamento del primer selector al nuevo
+            const firstDepartmentSelect = $('select[name="compromisos-1-departamento"]');
+            const newDepartmentSelect = $(`select[name="compromisos-${index}-departamento"]`);
+            
+            // Copia todas las opciones del primer select al nuevo
+            firstDepartmentSelect.find('option').each(function() {
+                newDepartmentSelect.append($(this).clone());
+            });
+            
+            // Copiar las opciones de referentes del primer selector al nuevo
+            const firstReferentesSelect = $('select[name="compromisos-1-referentes"]');
+            const newReferentesSelect = $(`select[name="compromisos-${index}-referentes"]`);
+            
+            firstReferentesSelect.find('option').each(function() {
+                newReferentesSelect.append($(this).clone());
+            });
+
+            // Activar el evento change para el departamento
+            $(`select[name="compromisos-${index}-departamento"]`).on('change', function() {
+                const row = $(this).closest('tr');
+                const departamentoId = $(this).val();
+                const areaSelect = row.find('select[name$="-area"]');
+                const origenSelect = row.find('select[name$="-origen"]');
+                
+                cargarAreasYOrigenesPorDepartamento(departamentoId, areaSelect, origenSelect);
+            });
+        }
+
+        // Función para cargar áreas y orígenes según el departamento
+        function cargarAreasYOrigenesPorDepartamento(departamentoId, areaSelect, origenSelect) {
+            if (!departamentoId) {
+                // Si no hay departamento seleccionado, limpiar los selectores
+                areaSelect.empty().append('<option value="">Seleccione un departamento primero</option>');
+                origenSelect.empty().append('<option value="">Seleccione un departamento primero</option>');
+                return;
+            }
+            
+            // Mostrar indicador de carga
+            areaSelect.empty().append('<option value="">Cargando áreas...</option>');
+            origenSelect.empty().append('<option value="">Cargando orígenes...</option>');
+            
+            // Cargar áreas
+            $.ajax({
+                url: '{{ url_for("reunion.get_areas_by_departamento") }}',
+                type: 'GET',
+                data: { departamento_id: departamentoId },
+                success: function(areas) {
+                    areaSelect.empty();
+                    
+                    // Agregar opción predeterminada
+                    if (areas.length === 0) {
+                        areaSelect.append('<option value="">No hay áreas disponibles</option>');
+                    } else {
+                        areaSelect.append('<option value="">Seleccione un área</option>');
+                        
+                        // Agregar áreas filtradas
+                        $.each(areas, function(index, area) {
+                            areaSelect.append($('<option>', {
+                                value: area.id,
+                                text: area.name
+                            }));
+                        });
+                    }
+                },
+                error: function() {
+                    areaSelect.empty().append('<option value="">Error al cargar áreas</option>');
+                }
+            });
+            
+            // Cargar orígenes
+            $.ajax({
+                url: '{{ url_for("reunion.get_origenes_by_departamento") }}',
+                type: 'GET',
+                data: { departamento_id: departamentoId },
+                success: function(origenes) {
+                    origenSelect.empty();
+                    
+                    // Agregar opción predeterminada
+                    if (origenes.length === 0) {
+                        origenSelect.append('<option value="">No hay orígenes disponibles</option>');
+                    } else {
+                        origenSelect.append('<option value="">Seleccione un origen</option>');
+                        
+                        // Agregar orígenes filtrados
+                        $.each(origenes, function(index, origen) {
+                            origenSelect.append($('<option>', {
+                                value: origen.id,
+                                text: origen.name
+                            }));
+                        });
+                    }
+                },
+                error: function() {
+                    origenSelect.empty().append('<option value="">Error al cargar orígenes</option>');
+                }
+            });
+        }
+
+        // Manejar cambio de departamento en cada fila de compromiso
+        $('#compromisos-table').on('change', 'select[name$="-departamento"]', function() {
+            const row = $(this).closest('tr');
+            const departamentoId = $(this).val();
+            const areaSelect = row.find('select[name$="-area"]');
+            const origenSelect = row.find('select[name$="-origen"]');
+            
+            cargarAreasYOrigenesPorDepartamento(departamentoId, areaSelect, origenSelect);
+        });
+
+        // Inicializar áreas y orígenes para los compromisos existentes
+        $('.select2').select2({
+            placeholder: "Selecciona referentes",
+            allowClear: true,
+            width: '100%'
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modificar Compromiso</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo_ministerio.png') }}">
+    <!-- Incluir CSS de Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        .form-horizontal {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .form-horizontal label {
+            width: 150px;
+            margin-right: 10px;
+        }
+
+        .form-horizontal .form-control {
+            flex: 1;
+            margin-right: 20px;
+        }
+
+        .compromiso {
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Mejor separación visual entre la reunión y los compromisos */
+        #compromisos-section {
+            margin-top: 40px;  /* Mayor separación entre reunión y compromisos */
+            text-align: center; /* Centrar el contenido */
+        }
+
+        /* Añadir separación clara entre las secciones */
+        .section-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Línea divisoria */
+        .divider {
+            height: 2px;
+            background-color: #ddd;
+            margin: 30px 0;
+        }
+
+        /* Estilo para los botones de añadir compromiso y enviar el formulario */
+        .form-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+        }
+
+        .required::after {
+            content: " *";
+            color: red;
+        }
+
+        .responsable-principal {
+            color: red !important;
+            font-weight: bold !important;
+        }
+
+        /* Alert Styles */
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; }
+        .alert-success { background-color: #d4edda; border-color: #c3e6cb; color: #155724; }
+        .alert-danger { background-color: #f8d7da; border-color: #f5c6cb; color: #721c24; }
+        .alert-warning { background-color: #fff3cd; border-color: #ffeeba; color: #856404; }
+        .alert .close { background: none; border: none; font-size: 20px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div class="container">
+        <!-- Alert Section -->
+        {% if alert %}
+        <div class="alert alert-{{ alert['type'] }}">
+            <span>{{ alert['message'] }}</span>
+            <button type="button" class="close" onclick="this.parentElement.style.display='none';">&times;</button>
+        </div>
+        {% endif %}
+        <h2>Editar Compromiso</h2>
+        <form method="POST" action="{{ url_for('home.edit_compromiso_view', compromiso_id=compromiso_id) }}">
+            {{ form.hidden_tag() }}
+
+            <div class="form-horizontal">
+                <label for="descripcion">Descripción:</label>
+                {{ form.descripcion(class="form-control") }}
+            </div>
+
+            <div class="form-horizontal">
+                <label for="estado" class="required">Estado:</label>
+                {{ form.estado(class="form-control") }}
+            </div>
+            <div class="form-horizontal">
+                <label for="prioridad" class="required">Prioridad:</label>
+                {{ form.prioridad(class="form-control") }}
+            </div>
+
+            <div class="form-horizontal">
+                <label for="fecha_limite">Fecha Límite:</label>
+                {{ form.fecha_limite(class="form-control", type="datetime-local") }}
+            </div>
+
+            <!-- Campo SelectField para los departamentos -->
+            <div class="form-horizontal">
+                <label for="departamento" class="required">Departamento:</label>
+                {{ form.departamento(class="form-control") }}
+            </div>
+
+            <!-- Campo Select2 para los referentes -->
+            <div class="form-horizontal">
+                <label for="referentes" class="required">Referentes:</label>
+                {{ form.referentes(class="form-control")|safe }}
+            </div>
+
+            <div class="form-horizontal">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Actualizar Compromiso</button>
+            </div>
+        </form>
+
+        <a href="{{ url_for('home.home_view') }}" class="btn btn-secondary"><i class="fas fa-home"></i> Volver al Home</a>
+    </div>
+
+    <!-- Incluir jQuery (necesario para Select2) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Incluir JS de Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+         $(document).ready(function() {
+            // Inicializar Select2 para los referentes
+            $('#referentes').select2({
+                placeholder: "Selecciona referentes",
+                allowClear: true,
+                templateResult: function(data) {
+                    var $result = $("<span></span>");
+                    $result.text(data.text);
+                    
+                    if ($(data.element).hasClass('responsable-principal')) {
+                        $result.addClass('responsable-principal');
+                    }
+                    
+                    return $result;
+                }
+            });
+
+            // Forzar la selección de los referentes preseleccionados desde el backend
+            var referentesPreseleccionados = {{ form.referentes.data|tojson }};
+            $('#referentes').val(referentesPreseleccionados).trigger('change');
+
+            // Forzar la selección del departamento preseleccionado desde el backend
+            var departamentoPreseleccionado = {{ form.departamento.data }};
+            $('#departamento').val(departamentoPreseleccionado).trigger('change');
+        });
+
+        function handleRemoveReferente(event, isPrincipal) {
+            if (isPrincipal) {
+                event.preventDefault();
+                alert("No se puede eliminar al responsable principal.");
+            }
+        }
+    </script>
+    <script>
+      console.error("Error de prueba para verificar la consola.");
+    </script>
+    <footer class="footer">
+        Servicio de Salud del Maule
+        <div>
+            <img src="{{ url_for('static', filename='logo_ministerio.png') }}" alt="Logo Servicio de Salud del Maule">
+        </div>
+    </footer>
+</body>
+</html>

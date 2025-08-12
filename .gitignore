@@ -1,0 +1,9 @@
+
+*.pyc
+/.idea
+/uploads/actas
+/data
+/test_env
+/CargarDatos
+/Cargar Datos
+cosas.sql

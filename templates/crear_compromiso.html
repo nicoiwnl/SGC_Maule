@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crear Compromiso - Servicio de Salud del Maule</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='logo_ministerio.png') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary-color: #0056b3;
+        --secondary-color: #f8f9fa;
+        --text-color: #333;
+        --border-color: #ced4da;
+        --focus-color: #80bdff;
+        --error-color: #dc3545;
+        --success-color: #28a745;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        line-height: 1.6;
+        color: var(--text-color);
+        background-color: #f0f2f5;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+
+      header {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      h1 {
+        color: var(--primary-color);
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      header p {
+        color: #666;
+      }
+
+      form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+
+      .form-row {
+        display: flex;
+        gap: 1rem;
+      }
+
+      .form-group {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--primary-color);
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 1rem;
+        transition: border-color 0.3s, box-shadow 0.3s;
+      }
+
+      input:focus,
+      select:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--focus-color);
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 100px;
+      }
+
+      button {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 1rem;
+        font-size: 1.1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: #004494;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem;
+          margin: 1rem;
+        }
+
+        .form-row {
+          flex-direction: column;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+      }
+
+      /* Estilos para el contenedor de orden de referentes */
+      #referentes-order {
+        border: 1px solid var(--border-color);
+        padding: 0.75rem;
+        border-radius: 4px;
+        background-color: var(--secondary-color);
+      }
+
+      #referentes-order div {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      #referentes-order div:last-child {
+        border-bottom: none;
+      }
+
+      .alert {
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1000;
+        min-width: 300px;
+      }
+
+      .alert-success {
+        color: #155724;
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+      }
+
+      .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+      }
+
+      .alert-warning {
+        color: #856404;
+        background-color: #fff3cd;
+        border-color: #ffeeba;
+      }
+
+      .alert .close {
+        color: inherit;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Crear Compromiso</h1>
+        <p>Complete el siguiente formulario para crear un nuevo compromiso.</p>
+      </header>
+      <a href="{{ url_for('home.home_view') }}" class="btn btn-secondary">
+        <i class="fas fa-home mr-2"></i> Volver al inicio
+      </a>
+      <br />
+      <br />
+
+      <!-- Alert Section -->
+      {% if alert %}
+      <div class="alert alert-{{ alert['type'] }}">
+        <span>{{ alert['message'] }}</span>
+        <button
+          type="button"
+          class="close"
+          onclick="this.parentElement.style.display='none';"
+        >
+          &times;
+        </button>
+      </div>
+      {% endif %}
+      <script>
+        setTimeout(function () {
+          document.querySelectorAll(".alert").forEach(function (alert) {
+            alert.style.display = "none";
+          });
+        }, 2000);
+      </script>
+
+      <form action="{{ url_for('home.crear_compromiso') }}" method="POST">
+        {{ form.hidden_tag() }}
+
+        <!-- Descripción -->
+        <div class="form-group">
+          <label for="descripcion">{{ form.descripcion.label }}</label>
+          {{ form.descripcion(class="form-control", id="descripcion",
+          placeholder="Ingrese la descripción del compromiso") }}
+        </div>
+
+        <!-- Departamento -->
+        <div class="form-group">
+          <label for="id_departamento">{{ form.id_departamento.label }}</label>
+          {{ form.id_departamento(class="form-control select2",
+          id="id_departamento") }}
+        </div>
+
+        <!-- Origen -->
+        {% if form.origen is defined %}
+        <div class="form-group">
+          <label for="origen">{{ form.origen.label }}</label>
+          {{ form.origen(class="form-control select2", id="origen") }}
+        </div>
+        {% endif %}
+
+        <!-- Área -->
+        {% if form.area is defined %}
+        <div class="form-group">
+          <label for="area">{{ form.area.label }}</label>
+          {{ form.area(class="form-control select2", id="area") }}
+        </div>
+        {% endif %}
+
+        <!-- Estado -->
+        <div class="form-group">
+          <label for="estado">{{ form.estado.label }}</label>
+          {{ form.estado(class="form-control", id="estado") }}
+        </div>
+
+        <!-- Prioridad -->
+        <div class="form-group">
+          <label for="prioridad">{{ form.prioridad.label }}</label>
+          {{ form.prioridad(class="form-control", id="prioridad") }}
+        </div>
+
+        <div class="form-row">
+          <!-- Fecha Creación -->
+          <div class="form-group col-md-6">
+            <label for="fecha_creacion">{{ form.fecha_creacion.label }}</label>
+            {{ form.fecha_creacion(class="form-control", id="fecha_creacion",
+            type="datetime-local") }}
+          </div>
+
+          <!-- Fecha Límite -->
+          <div class="form-group col-md-6">
+            <label for="fecha_limite">{{ form.fecha_limite.label }}</label>
+            {{ form.fecha_limite(class="form-control", id="fecha_limite",
+            type="datetime-local") }}
+          </div>
+        </div>
+
+        <div class="form-row">
+          <!-- Comentario -->
+          <div class="form-group col-md-6">
+            <label for="comentario">{{ form.comentario.label }}</label>
+            {{ form.comentario(class="form-control", id="comentario", rows="3")
+            }}
+          </div>
+
+          <!-- Comentario Dirección -->
+          {% if user['nivel_jerarquico'] == 'DIRECTOR DE SERVICIO' %}
+          <div class="form-group col-md-6">
+            <label for="comentario_direccion"
+              >{{ form.comentario_direccion.label }}</label
+            >
+            {{ form.comentario_direccion(class="form-control",
+            id="comentario_direccion", rows="3") }}
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Referentes -->
+        <div class="form-group">
+          <label for="referentes">{{ form.referentes.label }}</label>
+          {{ form.referentes(class="form-control select2", id="referentes",
+          multiple="multiple") }}
+          <small class="form-text text-muted"
+            >El primer referente seleccionado será el responsable
+            principal</small
+          >
+        </div>
+
+        <button type="submit" class="btn btn-primary">Crear Compromiso</button>
+      </form>
+
+      <!-- Add a container to display the referentes order -->
+      <div id="referentes-order" class="mt-4">
+        <!-- Referentes seleccionados se mostrarán aquí -->
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        // Array para mantener el orden exacto de selección
+        var referentesSeleccionados = [];
+
+        // Inicializar Select2
+        $(".select2").select2({
+          width: "100%",
+        });
+
+        // Capturar el orden exacto de selección para referentes
+        $("#referentes").on("select2:select", function (e) {
+          var nuevoId = e.params.data.id;
+
+          // Comprobar si el referente ya existe en el array y eliminarlo
+          referentesSeleccionados = referentesSeleccionados.filter(function (
+            ref
+          ) {
+            return ref.id !== nuevoId;
+          });
+
+          // Añadir el referente al final del array (nueva posición)
+          referentesSeleccionados.push({
+            id: nuevoId,
+            text: e.params.data.text,
+          });
+
+          actualizarVistaOrden();
+        });
+
+        // Manejar la eliminación de un referente
+        $("#referentes").on("select2:unselect", function (e) {
+          // Eliminar el referente del array de orden
+          referentesSeleccionados = referentesSeleccionados.filter(function (
+            ref
+          ) {
+            return ref.id !== e.params.data.id;
+          });
+          actualizarVistaOrden();
+        });
+
+        // Función para actualizar el contenedor de orden
+        function actualizarVistaOrden() {
+          var orderContainer = $("#referentes-order");
+          orderContainer.empty();
+
+          if (referentesSeleccionados.length > 0) {
+            orderContainer.append("<h4>Orden de Referentes:</h4>");
+            referentesSeleccionados.forEach(function (referente, index) {
+              var isResponsable = index === 0 ? " (Responsable Principal)" : "";
+              orderContainer.append(
+                "<div>" +
+                  (index + 1) +
+                  ". " +
+                  referente.text +
+                  isResponsable +
+                  "</div>"
+              );
+            });
+          }
+        }
+
+        // Función para cargar áreas y orígenes según el departamento seleccionado
+        function cargarAreasYOrigenes(departamentoId) {
+          if (!departamentoId) {
+            return; // No hacer nada si no hay departamento seleccionado
+          }
+
+          console.log(
+            "Cargando áreas y orígenes para departamento ID:",
+            departamentoId
+          );
+
+          // Cargar áreas asociadas al departamento
+          $.ajax({
+            url: "/get_areas_by_departamento", // Ruta absoluta en lugar de relativa
+            type: "GET",
+            data: { departamento_id: departamentoId },
+            beforeSend: function () {
+              // Mostrar mensaje de carga
+              $("#area").html('<option value="">Cargando áreas...</option>');
+            },
+            success: function (areas) {
+              console.log("Áreas recibidas:", areas);
+              var areaSelect = $("#area");
+              areaSelect.empty();
+
+              // Agregar opción predeterminada
+              areaSelect.append(
+                new Option("Seleccione un área", "", true, true)
+              );
+
+              // Agregar áreas filtradas
+              $.each(areas, function (index, area) {
+                areaSelect.append(new Option(area.name, area.id, false, false));
+              });
+            },
+            error: function (xhr, status, error) {
+              console.error(
+                "Error al cargar áreas:",
+                error,
+                xhr.responseText,
+                xhr.status
+              );
+              $("#area").html(
+                '<option value="">Error al cargar áreas</option>'
+              );
+            },
+          });
+
+          // Cargar orígenes asociados al departamento
+          $.ajax({
+            url: "/get_origenes_by_departamento", // Ruta absoluta en lugar de relativa
+            type: "GET",
+            data: { departamento_id: departamentoId },
+            beforeSend: function () {
+              // Mostrar mensaje de carga
+              $("#origen").html(
+                '<option value="">Cargando orígenes...</option>'
+              );
+            },
+            success: function (origenes) {
+              console.log("Orígenes recibidos:", origenes);
+              var origenSelect = $("#origen");
+              origenSelect.empty();
+
+              // Agregar opción predeterminada
+              origenSelect.append(
+                new Option("Seleccione un origen", "", true, true)
+              );
+
+              // Agregar orígenes filtrados
+              $.each(origenes, function (index, origen) {
+                origenSelect.append(
+                  new Option(origen.name, origen.id, false, false)
+                );
+              });
+            },
+            error: function (xhr, status, error) {
+              console.error("Error al cargar orígenes:", error);
+              console.error(
+                "Detalles del error:",
+                xhr.status,
+                xhr.statusText,
+                xhr.responseText
+              );
+              $("#origen").html(
+                '<option value="">Error al cargar orígenes</option>'
+              );
+            },
+          });
+        }
+
+        // Evento para cuando cambia el departamento
+        $("#id_departamento").on("change", function () {
+          var departamentoId = $(this).val();
+          console.log("Departamento cambiado a:", departamentoId);
+          cargarAreasYOrigenes(departamentoId);
+        });
+
+        // Inicializar áreas y orígenes con el departamento seleccionado inicialmente
+        var departamentoInicial = $("#id_departamento").val();
+        if (departamentoInicial) {
+          console.log("Departamento inicial:", departamentoInicial);
+          cargarAreasYOrigenes(departamentoInicial);
+        }
+
+        // Sobrescribir la función original de cambio con la nuestra
+        $("#referentes").on("change", function () {
+          // La lógica de orden ya está manejada por los eventos select2:select y select2:unselect
+          // Esto es para asegurarnos que si hay selección inicial, esté correctamente reflejada
+          if (referentesSeleccionados.length === 0) {
+            var currentSelections = $(this).val();
+            if (currentSelections && currentSelections.length) {
+              // Reconstruir el array de orden basado en los valores actuales
+              referentesSeleccionados = [];
+              var uniqueIds = new Set(); // Para asegurar IDs únicos
+
+              currentSelections.forEach(
+                function (id) {
+                  if (!uniqueIds.has(id)) {
+                    // Solo agregar si no existe ya
+                    uniqueIds.add(id);
+                    var option = $(this).find('option[value="' + id + '"]');
+                    referentesSeleccionados.push({
+                      id: id,
+                      text: option.text(),
+                    });
+                  }
+                }.bind(this)
+              );
+              actualizarVistaOrden();
+            }
+          }
+        });
+
+        // Manejar el envío del formulario para asegurar que los referentes estén en el orden correcto
+        $("form").on("submit", function () {
+          // Reordenar las opciones seleccionadas según nuestro array
+          var select = $("#referentes");
+          var options = select.find("option:selected").detach();
+
+          // Limpiar las selecciones actuales
+          select.val(null).trigger("change");
+
+          // Añadir de nuevo en el orden correcto
+          referentesSeleccionados.forEach(function (ref) {
+            var option = options.filter('[value="' + ref.id + '"]');
+            select.append(option.prop("selected", true));
+          });
+
+          // Activar el cambio para que Select2 lo reconozca
+          select.trigger("change");
+          return true;
+        });
+      });
+    </script>
+  </body>
+</html>
